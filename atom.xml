@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.decacent.com/"/>
-  <updated>2018-05-17T11:26:44.115Z</updated>
+  <updated>2018-07-05T12:32:16.817Z</updated>
   <id>http://www.decacent.com/</id>
   
   <author>
@@ -15,6 +15,31 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>namd 氮化硅固体孔模拟</title>
+    <link href="http://www.decacent.com/2018/07/05/namd/"/>
+    <id>http://www.decacent.com/2018/07/05/namd/</id>
+    <published>2018-07-05T12:04:55.000Z</published>
+    <updated>2018-07-05T12:32:16.817Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="1-去除轨迹文件中的水分子"><a href="#1-去除轨迹文件中的水分子" class="headerlink" title="1. 去除轨迹文件中的水分子"></a>1. 去除轨迹文件中的水分子</h2><p>分析数据时需要从轨迹文件中去除不必要的分子从而减小分析文件的大小来增加性能。首先需要去除DCD文件中的水分子。<br>removeWaterDcd.tcl：<br><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Author: Jeff Comer &lt;jcomer2@illinois.edu&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Remove the directories from a path, leaving only the file name.</span></span><br><span class="line">proc trimPath &#123;name&#125; &#123;</span><br><span class="line">    <span class="built_in">set</span> ind [string last <span class="string">"/"</span> <span class="variable">$name</span>]</span><br><span class="line">    <span class="built_in">return</span> [string range <span class="variable">$name</span> [expr <span class="variable">$ind</span>+1] end]</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Remove water and silicon material from a dcd file.</span></span><br><span class="line">proc removeWater &#123;structPrefix dcd&#125; &#123;</span><br><span class="line">    <span class="comment"># Select the water or silicon material.</span></span><br><span class="line">    <span class="built_in">set</span> selText <span class="string">"(not water) and (not resname SIN SIO2)"</span></span><br><span class="line">    <span class="comment"># Prefix to add to the output dcd files:</span></span><br><span class="line">    <span class="built_in">set</span> outPrefix <span class="string">"nw_"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Load the system.</span></span><br><span class="line">    mol load psf <span class="variable">$structPrefix</span>.psf pdb <span class="variable">$structPrefix</span>.pdb</span><br><span class="line">    <span class="built_in">set</span> sel [atomselect top <span class="variable">$selText</span>]</span><br><span class="line">    <span class="built_in">set</span> dcdName [trimPath <span class="variable">$dcd</span>]</span><br><span class="line">    <span class="built_in">set</span> structName [trimPath <span class="variable">$structPrefix</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Write the structure files for the resulting system.</span></span><br><span class="line">    <span class="variable">$sel</span> writepsf nw_<span class="variable">$&#123;structName&#125;</span>.psf</span><br><span class="line">    <span class="variable">$sel</span> writepdb nw_<span class="variable">$&#123;structName&#125;</span>.pdb</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Load the trajectory.</span></span><br><span class="line">    animate delete all</span><br><span class="line">    mol addfile <span class="variable">$dcd</span> waitfor all</span><br><span class="line">    <span class="built_in">set</span> last [expr &#123;[molinfo top get numframes]-1&#125;]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Write the dcd files for the selection.</span></span><br><span class="line">    animate write dcd <span class="string">"nw_<span class="variable">$dcdName</span>"</span> beg 0 end <span class="variable">$last</span> waitfor all sel <span class="variable">$sel</span> top</span><br><span class="line"></span><br><span class="line">    <span class="variable">$sel</span> delete</span><br><span class="line">    mol delete top</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p><p>！<a href="namd/1.png">first</a><br>打开VMD 的 TKCon,执行命令：<br><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> removeWaterDcd.tcl</span><br><span class="line">removeWater ../../scaled_sin_ions ../sin_10V.dcd</span><br></pre></td></tr></table></figure></p><p>生成nw_sin_10v.dcd 轨迹文件中将不包含水分子。</p><h2 id="2-计算离子电流"><a href="#2-计算离子电流" class="headerlink" title="2. 计算离子电流"></a>2. 计算离子电流</h2><p>$$ I(t+\frac {\Delta t}{2})=\frac {1}{\Delta tl}\sum_{i}^{N}q_{i}(\zeta_{i}(t+\Delta t))-\zeta_{i}(t)),</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;1-去除轨迹文件中的水分子&quot;&gt;&lt;a href=&quot;#1-去除轨迹文件中的水分子&quot; class=&quot;headerlink&quot; title=&quot;1. 去除轨迹文件中的水分子&quot;&gt;&lt;/a&gt;1. 去除轨迹文件中的水分子&lt;/h2&gt;&lt;p&gt;分析数据时需要从轨迹文件中去除不必要的分子从而减
+      
+    
+    </summary>
+    
+      <category term="科研" scheme="http://www.decacent.com/categories/%E7%A7%91%E7%A0%94/"/>
+    
+    
+      <category term="namd" scheme="http://www.decacent.com/tags/namd/"/>
+    
+  </entry>
   
   <entry>
     <title>Hello World</title>
